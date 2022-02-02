@@ -1,29 +1,42 @@
 #!/usr/bin/python
 import yaml
 import pexpect
+import coloredlogs
+import verboselogs
+
+logger = verboselogs.VerboseLogger(__name__)
+log_fmt = "%(levelname)-10s %(message)s"
+coloredlogs.install(level='DEBUG', logger=logger, fmt=log_fmt)
 
 
 def runner(checks):
-    for _, check in checks.items():
+    for name, check in checks.items():
+        logger.info(f">> Starting check on {name}")
         child = pexpect.spawn(check['command'])
-        print(f"Running command {check['command']}")
+        logger.debug(f"Spawning process {check['command']}")
         prompts = check['stdin']['prompts']
+        logger.debug(f"Prompts detected: {prompts}")
         responses = check['stdin']['responses']
+        logger.debug(f"Responses detected: {responses}")
         if prompts:
             for prompt, response in zip(prompts, responses):
-                print(f"Waiting for prompt: {prompt}")
+                logger.verbose(f"Waiting for prompt '{prompt}'")
                 index = child.expect([prompt, pexpect.TIMEOUT], timeout=1)
-                print("Prompt received")
+                logger.verbose("Prompt received!")
                 if index:
-                    print("Timed out at prompt...")
+                    logger.critical("Timed out waiting for prompt.")
+                    logger.warning("Expected pattern: {prompt}")
                     exit()
-                print(f"Sending '{response}'")
+                logger.verbose(f"Sending '{response}'")
                 child.sendline(response)
-                print("Sent. Flushing stdout")
+                logger.verbose("Response sent.")
                 child.readline()
         stdout = child.readline().decode('utf-8').replace("\r\n", "")
         if stdout == check['stdout']:
-            print("Test Passed!")
+            logger.success("Test passed")
+        else:
+            logger.error("Test failed.")
+            logger.warning(f"Expected '{stdout}'. Got '{check['stdout']}'")
 
 
 def main():
