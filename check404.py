@@ -21,12 +21,17 @@ def run_check(command, stdin, prompts):
     if prompts:
         for prompt, response in zip(prompts, stdin):
             logger.verbose(f"Waiting for prompt '{prompt}'")
-            index = child.expect([prompt, pexpect.TIMEOUT], timeout=1)
-            logger.verbose("Prompt received!")
+            index = child.expect(
+                    [prompt, pexpect.TIMEOUT, pexpect.EOF],
+                    timeout=1)
             if index:
-                logger.critical("Timed out waiting for prompt.")
+                if index == 1:
+                    logger.critical("Timed out waiting for prompt.")
+                else:
+                    logger.critical("Program returned EOF.")
                 logger.warning("Expected pattern: {prompt}")
-                exit(2)
+                break
+            logger.verbose("Prompt received!")
             logger.verbose(f"Sending '{response}'")
             child.sendline(response)
             logger.verbose("Response sent. Flushing stdout.")
