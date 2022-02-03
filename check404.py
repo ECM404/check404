@@ -4,8 +4,10 @@ import yaml
 import coloredlogs
 import verboselogs
 if os.name == 'nt':
+    from wexpect.wexpect_util import EOF, TIMEOUT
     import wexpect as pexpect
 else:
+    from pexpect import EOF, TIMEOUT
     import pexpect
 
 logger = verboselogs.VerboseLogger(__name__)
@@ -21,21 +23,19 @@ def run_check(command, stdin, prompts):
     if prompts:
         for prompt, response in zip(prompts, stdin):
             logger.verbose(f"Waiting for prompt '{prompt}'")
-            index = child.expect(
-                    [prompt, pexpect.TIMEOUT, pexpect.EOF],
-                    timeout=1)
-            if index:
-                if index == 1:
-                    logger.critical("Timed out waiting for prompt.")
-                else:
-                    logger.critical("Program returned EOF.")
-                logger.warning("Expected pattern: {prompt}")
+            try:
+                child.expect([prompt], timeout=1)
+                logger.verbose("Prompt received!")
+                logger.verbose(f"Sending '{response}'")
+                child.sendline(response)
+                logger.verbose("Response sent. Flushing stdout.")
+                child.readline()
+            except EOF:
+                logger.critical("Program returned EOF.")
                 break
-            logger.verbose("Prompt received!")
-            logger.verbose(f"Sending '{response}'")
-            child.sendline(response)
-            logger.verbose("Response sent. Flushing stdout.")
-            child.readline()
+            except TIMEOUT:
+                logger.critical("Timed out waiting for prompt.")
+                break
         logger.verbose("Waiting for stdout.")
     if os.name == 'nt':
         stdout = child.readline().replace("\r\n", "")
