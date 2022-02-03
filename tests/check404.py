@@ -1,8 +1,12 @@
 #!/usr/bin/python
+import os
 import yaml
-import pexpect
 import coloredlogs
 import verboselogs
+if os.name == 'nt':
+    import wexpect as pexpect
+else:
+    import pexpect
 
 logger = verboselogs.VerboseLogger(__name__)
 log_fmt = "%(levelname)-10s %(message)s"
@@ -28,7 +32,10 @@ def run_check(command, stdin, prompts):
             logger.verbose("Response sent. Flushing stdout.")
             child.readline()
         logger.verbose("Waiting for stdout.")
-    stdout = child.readline().decode('utf-8').replace("\r\n", "")
+    if os.name == 'nt':
+        stdout = child.readline().replace("\r\n", "")
+    else:
+        stdout = child.readline().decode('utf-8').replace("\r\n", "")
     return stdout
 
 
