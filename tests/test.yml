@@ -1,0 +1,48 @@
+"Exercicio 1":
+  command: ./tests/bin/ex1.out"
+  stdin: [None]
+  stdout: ["Ola, mundo!"]
+  prompts: []
+  weight: 1
+  hints: ['']
+
+"Exercicio 2": 
+  command: ./tests/bin/ex2.out"
+  stdin: [['2'], ['4'], ['5']]
+  stdout: ['2', '4', '5']
+  prompts: ["Digite um numero: "]
+  weight: 1
+  hints: ['','','']
+
+"Exercicio 3": 
+  command: ./tests/bin/ex3.out"
+  stdin: [['2'], ['4'], ['5']]
+  stdout: ['2.000000', '4.000000', '5.000000']
+  prompts: ["Digite um numero: "]
+  weight: 1
+  hints: ['','','']
+
+"Exercicio 4": 
+  command: ./tests/bin/ex4.out"
+  stdin: [['2'], ['4'], ['5']]
+  stdout: ['2.00', '4.00', '5.00']
+  prompts: ["Digite um numero: "]
+  weight: 1
+  hints: ['','','']
+
+"Exercicio 5": 
+  command: ./tests/bin/ex5.out"
+  stdin: [['2', '3'], ['4', '5'], ['5', '7']]
+  stdout: ['3 2', '5 4', '7 5']
+  prompts: ["Digite um numero: ", "Digite um numero: "]
+  weight: 1
+  hints: ['','','']
+
+"Exercicio 6": 
+  command: ./tests/bin/ex6.out"
+  stdin: [['2 3'], ['4 5'], ['5 7']]
+  stdout: ['3.00 2.00', '5.00 4.00', '7.00 5.00']
+  prompts: ["Digite dois numeros: "]
+  weight: 1
+  hints: ['','','']
+
