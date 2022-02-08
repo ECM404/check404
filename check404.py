@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import os
 import yaml
+import json
 import coloredlogs
 import verboselogs
 if os.name == 'nt':
@@ -50,10 +51,13 @@ def run_check(command, stdin, prompts):
 
 
 def runner(problem_set):
+    results = {"tests": {}}
     for name, problem in problem_set.items():
         print(f"\n{'*'*12} Verificando {name} {'*'*12}\n")
+        weight = problem['weight']
         prompts = problem['prompts']
         command = problem['command']
+        results["tests"][name] = {"weight": weight, "status": "fail"}
         for i, stdout in enumerate(problem['stdout']):
             stdin = problem['stdin'][i]
             hint = problem['hints'][i]
@@ -62,11 +66,29 @@ def runner(problem_set):
                 break
             if stdout == out:
                 logger.success("Teste concluído com sucesso =)")
+                results["tests"][name]['status'] = "pass"
             else:
                 logger.error("Teste apresentou um erro =(")
                 logger.warning(f"Esperava: '{stdout}'. Recebido: '{out}'")
                 if hint != "":
                     logger.notice(f"Dica: {hint}")
+    return results
+
+
+def check_results(results):
+    total = {"total_tests": len(results["tests"]),
+             "passed": 0,
+             "total_weights": 0}
+    tests = results["tests"]
+    grade = 0
+    for problem, result in tests.items():
+        if result["status"] == "pass":
+            total["passed"] += 1
+            grade += result["weight"]
+        total["total_weights"] += result["weight"]
+    total["grade"] = grade * (10/total["total_weights"])
+    results["total"] = total
+    return results
 
 
 def main():
@@ -75,7 +97,19 @@ def main():
             checks = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
             print(exc)
-    runner(checks)
+    results = runner(checks)
+    results = check_results(results)
+    total = results["total"]
+    print()
+    logger.info("Testes concluidos.")
+    message = f"Passou em {total['passed']}/{total['total_tests']} testes. \
+Nota final - {total['grade']:.2}/10."
+    if total["grade"] < 6.0:
+        logger.critical(message)
+    else:
+        logger.success(message)
+    with open("tests/results.json", "w") as out:
+        json.dump(results, out)
 
 
 if __name__ == "__main__":
