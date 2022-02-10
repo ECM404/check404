@@ -103,7 +103,7 @@ def main():
     print()
     logger.info("Testes concluidos.")
     message = f"Passou em {total['passed']}/{total['total_tests']} testes. \
-Nota final - {total['grade']:.2}/10."
+Nota final - {total['grade']:.2f}/10."
     if total["grade"] < 6.0:
         logger.critical(message)
     else:
