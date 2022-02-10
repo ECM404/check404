@@ -1,9 +1,9 @@
 .PHONY: install test
 
 install:
-	python -m pip install -r requirements.txt
+	python3 -m pip install -r requirements.txt
 
 test:
-	python ./check404.py
+	python3 ./check404.py
 
 
