@@ -4,6 +4,7 @@ import yaml
 import json
 import coloredlogs
 import verboselogs
+from ctypes import CDLL
 if os.name == 'nt':
     from wexpect.wexpect_util import EOF, TIMEOUT
     import wexpect as pexpect
@@ -13,7 +14,19 @@ else:
 
 logger = verboselogs.VerboseLogger(__name__)
 log_fmt = "%(levelname)-10s %(message)s"
-coloredlogs.install(level='INFO', logger=logger, fmt=log_fmt)
+coloredlogs.install(level='DEBUG', logger=logger, fmt=log_fmt)
+
+
+def run_function(command, stdin, function):
+    file = command.replace("./", "")
+    if not os.path.isfile(file):
+        logger.critical(f"O arquivo {file} não existe.")
+        logger.warning("Verifique se não houve erro de compilação.")
+        return "nofile_err"
+    logger.info(f"Verificando com input: {stdin}.")
+    logger.debug(f"Iniciando verificacao da funcao: {function}")
+    shared_lib = CDLL(file)
+    return getattr(shared_lib, function)(*stdin)
 
 
 def run_check(command, stdin, prompts):
@@ -61,7 +74,11 @@ def runner(problem_set):
         for i, stdout in enumerate(problem['stdout']):
             stdin = problem['stdin'][i]
             hint = problem['hints'][i]
-            out = run_check(command, stdin, prompts)
+            if 'function' in problem:
+                function = problem['function']
+                out = run_function(command, stdin, function)
+            else:
+                out = run_check(command, stdin, prompts)
             if out == "nofile_err":
                 break
             if stdout == out:
