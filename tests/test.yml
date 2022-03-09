@@ -1,8 +1,0 @@
-"Calculadora - Soma":
-  command: "./tests/bin/calc.so"
-  function: soma
-  stdin: [[2,3]]
-  stdout: [5]
-  prompts: []
-  weight: 1
-  hints: ['']

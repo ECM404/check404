@@ -5,6 +5,7 @@ import json
 import coloredlogs
 import verboselogs
 from ctypes import CDLL
+import ctypes
 if os.name == 'nt':
     from wexpect.wexpect_util import EOF, TIMEOUT
     import wexpect as pexpect
@@ -19,6 +20,9 @@ coloredlogs.install(level='DEBUG', logger=logger, fmt=log_fmt)
 
 def run_function(command, stdin, function):
     file = command.replace("./", "")
+    restype, func_name, argtypes = function.split()
+    if len(argtypes) > 1:
+        argtypes = argtypes.split(',')
     if not os.path.isfile(file):
         logger.critical(f"O arquivo {file} não existe.")
         logger.warning("Verifique se não houve erro de compilação.")
@@ -26,7 +30,10 @@ def run_function(command, stdin, function):
     logger.info(f"Verificando com input: {stdin}.")
     logger.debug(f"Iniciando verificacao da funcao: {function}")
     shared_lib = CDLL(file)
-    return getattr(shared_lib, function)(*stdin)
+    test_function = getattr(shared_lib, func_name)
+    test_function.restype = getattr(ctypes, restype)
+    test_function.argtypes = [getattr(ctypes, x) for x in argtypes]
+    return getattr(shared_lib, func_name)(*stdin)
 
 
 def run_check(command, stdin, prompts):
