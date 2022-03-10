@@ -1,0 +1,41 @@
+"Calculadora - Soma":
+  command: "./tests/bin/calc.so"
+  function: c_int soma c_int,c_int
+  stdin: [[2,3]]
+  stdout: [5]
+  prompts: []
+  weight: 1
+  hints: ['']
+
+"Array baby!!!":
+  command: "./tests/bin/teste.so"
+  function: c_int teste_vetor *c_int
+  stdin: [[[1,2,3,4,5,6,7,8,9,10]]]
+  stdout: [7]
+  weight: 1
+  hints: ['']
+
+"Media - funcao":
+  command: "./tests/bin/teste_media.so"
+  function: c_float calcula_media *c_float
+  stdin: [[[10,9,8,7,6,5,4,3,2,1]], [[1,1,1,1,1,1,1,1,1,1]]]
+  stdout: [5.5, 1]
+  weight: 1
+  hints: ['', ''] 
+
+"Media - vetor":
+  command: "./tests/bin/teste_media.so"
+  function: c_float calcula_media *c_float
+  vartype: "*c_float"
+  stdin: [[[10,9,8,7,6,5,4,3,2,1]], [[1,1,1,1,1,1,1,1,1,1]]]
+  stdout: [[[10,9,8,7,6,5,4,3,2,1]], [[1,1,1,1,1,1,1,1,1,1]]]
+  weight: 1
+  hints: ['', ''] 
+
+"Media - main":
+  command: "./tests/bin/teste_media.out"
+  stdin: [["1 2 3 4 5 6 7 8 9 10"]]
+  prompts: ["(.*):"]
+  stdout: ['6.0 7.0 8.0 9.0 10.0 ']
+  weight: 1
+  hints: ['', ''] 
