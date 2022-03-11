@@ -5,6 +5,7 @@ import json
 import coloredlogs
 import verboselogs
 from ctypes import CDLL
+from collections.abc import Iterable
 import ctypes
 if os.name == 'nt':
     from wexpect.wexpect_util import EOF, TIMEOUT
@@ -144,7 +145,7 @@ def runner(problem_set):
                 check_aprox = True
             if stdout == out or \
                (check_aprox and (abs(stdout - out) < 0.1)) or \
-               stdout in out:
+               (isinstance(out, Iterable) and stdout in out):
                 logger.success("Teste concluído com sucesso =)")
                 results["tests"][name]['status'] = "pass"
             else:
