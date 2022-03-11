@@ -1,48 +1,41 @@
-"Exercicio 1":
-  command: "./tests/bin/ex1.out"
-  stdin: [None]
-  stdout: ["Ola, mundo!"]
+"Calculadora - Soma":
+  command: "./tests/bin/calc.so"
+  function: c_int soma c_int,c_int
+  stdin: [[2,3]]
+  stdout: [5]
   prompts: []
   weight: 1
   hints: ['']
 
-"Exercicio 2": 
-  command: "./tests/bin/ex2.out"
-  stdin: [['2'], ['4'], ['5']]
-  stdout: ['2', '4', '5']
-  prompts: ["Digite um numero: "]
+"Array baby!!!":
+  command: "./tests/bin/teste.so"
+  function: c_int teste_vetor *c_int
+  stdin: [[[1,2,3,4,5,6,7,8,9,10]]]
+  stdout: [7]
   weight: 1
-  hints: ['','','']
+  hints: ['']
 
-"Exercicio 3": 
-  command: "./tests/bin/ex3.out"
-  stdin: [['2'], ['4'], ['5']]
-  stdout: ['2.000000', '4.000000', '5.000000']
-  prompts: ["Digite um numero: "]
+"Media - funcao":
+  command: "./tests/bin/teste_media.so"
+  function: c_float calcula_media *c_float
+  stdin: [[[10,9,8,7,6,5,4,3,2,1]], [[1,1,1,1,1,1,1,1,1,1]]]
+  stdout: [5.5, 1]
   weight: 1
-  hints: ['','','']
+  hints: ['', ''] 
 
-"Exercicio 4": 
-  command: "./tests/bin/ex4.out"
-  stdin: [['2'], ['4'], ['5']]
-  stdout: ['2.00', '4.00', '5.00']
-  prompts: ["Digite um numero: "]
+"Media - vetor":
+  command: "./tests/bin/teste_media.so"
+  function: c_float calcula_media *c_float
+  vartype: "*c_float"
+  stdin: [[[10,9,8,7,6,5,4,3,2,1]], [[1,1,1,1,1,1,1,1,1,1]]]
+  stdout: [[[10,9,8,7,6,5,4,3,2,1]], [[1,1,1,1,1,1,1,1,1,1]]]
   weight: 1
-  hints: ['','','']
+  hints: ['', ''] 
 
-"Exercicio 5": 
-  command: "./tests/bin/ex5.out"
-  stdin: [['2', '3'], ['4', '5'], ['5', '7']]
-  stdout: ['3 2', '5 4', '7 5']
-  prompts: ["Digite um numero: ", "Digite um numero: "]
+"Media - main":
+  command: "./tests/bin/teste_media.out"
+  stdin: [["1 2 3 4 5 6 7 8 9 10"]]
+  prompts: ["(.*):"]
+  stdout: ['6.0 7.0 8.0 9.0 10.0 ']
   weight: 1
-  hints: ['','','']
-
-"Exercicio 6": 
-  command: "./tests/bin/ex6.out"
-  stdin: [['2 3'], ['4 5'], ['5 7']]
-  stdout: ['3.00 2.00', '5.00 4.00', '7.00 5.00']
-  prompts: ["Digite dois numeros: "]
-  weight: 1
-  hints: ['','','']
-
+  hints: ['', ''] 

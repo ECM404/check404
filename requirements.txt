@@ -1,5 +1,5 @@
 pyyaml
 pexpect
-wexpect
+wexpect==2.3.2
 coloredlogs
 verboselogs
