@@ -109,9 +109,9 @@ def run_check(command, stdin, prompts):
                 break
         logger.verbose("Esperando pela resposta.")
     if os.name == 'nt':
-        stdout = child.readline().replace("\r\n", "")
+        stdout = child.read().replace("\r\n", "")
     else:
-        stdout = child.readline().decode('utf-8').replace("\r\n", "")
+        stdout = child.read().decode('utf-8').replace("\r\n", "")
     return stdout
 
 
@@ -138,12 +138,21 @@ def runner(problem_set):
                 out = run_check(command, stdin, prompts)
             if out == "nofile_err":
                 break
-            if stdout == out:
+            check_aprox = False
+            if type(stdout) == str and stdout[0] == "~":
+                stdout = float(stdout[1:])
+                check_aprox = True
+            if stdout == out or \
+               (check_aprox and (abs(stdout - out) < 0.1)) or \
+               stdout in out:
                 logger.success("Teste concluído com sucesso =)")
                 results["tests"][name]['status'] = "pass"
             else:
                 logger.error("Teste apresentou um erro =(")
-                logger.warning(f"Esperava: '{stdout}'. Recebido: '{out}'")
+                if check_aprox:
+                    logger.warning(f"Esperava: aprox '{stdout}'. Recebido: '{out}'")
+                else:
+                    logger.warning(f"Esperava: '{stdout}'. Recebido: '{out}'")
                 if hint != "":
                     logger.notice(f"Dica: {hint}")
     return results
