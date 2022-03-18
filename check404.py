@@ -150,6 +150,7 @@ def runner(problem_set):
                 results["tests"][name]['status'] = "pass"
             else:
                 logger.error("Teste apresentou um erro =(")
+                results["tests"][name] = {"weight": weight, "status": "fail"}
                 if check_aprox:
                     logger.warning(f"Esperava: aprox '{stdout}'. Recebido: '{out}'")
                 else:
