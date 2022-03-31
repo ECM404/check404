@@ -184,15 +184,8 @@ def main():
             print(exc)
     results = runner(checks)
     results = check_results(results)
-    total = results["total"]
     print()
     logger.info("Testes concluidos.")
-    message = f"Passou em {total['passed']}/{total['total_tests']} testes. \
-Nota final - {total['grade']:.2f}/10."
-    if total["grade"] < 6.0:
-        logger.critical(message)
-    else:
-        logger.success(message)
     with open("tests/results.json", "w") as out:
         json.dump(results, out)
 
