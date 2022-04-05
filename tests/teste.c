@@ -1,8 +1,10 @@
-#define V_SIZE 10
-void teste_vetor(float*, int);
+#include <stdio.h>
 
-void teste_vetor(float vetor[], int scale) {
-  for (int i = 0; i < V_SIZE; ++i) {
-    vetor[i] += scale;
-  }
+int main (int argc, char *argv[])
+{
+  int a;
+  printf("Digite o valor de a: ");
+  scanf("%i", &a);
+  printf("Valor digitado: %i", a);
+  return 0;
 }
