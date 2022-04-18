@@ -9,8 +9,8 @@ def iostream_run(check: Check) -> CheckResult:
                                    stdin=PIPE,
                                    stdout=PIPE,
                                    encoding='utf-8')
-    except OSError as e:
-        msg = f"O arquivo {e.filename[2:]} não foi encontrado."
+    except OSError:
+        msg = f"O arquivo '{check.file}' não foi encontrado."
         return CheckResult(CheckState.ERROR, msg)
     try:
         output, stderr = process.communicate(input=check.input,
