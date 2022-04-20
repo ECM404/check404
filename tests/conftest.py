@@ -2,13 +2,13 @@ import pytest
 from check404 import testing, behaviors
 
 
-@pytest.fixture(scope="session")
-def create_check():
-    check = testing.Check(
-            file='b.out',
-            input='5',
-            expect='5',
-            run_behavior=behaviors.iostream_run,
-            validation_behavior=behaviors.iostream_validation
-            )
-    return check
+@pytest.fixture(scope="function")
+def compile_check():
+    def _compile_check(file):
+        check = testing.Check(
+                file=file,
+                run_behavior=behaviors.compilation_run,
+                validation_behavior=behaviors.file_validation
+                )
+        return check.run()
+    return _compile_check
