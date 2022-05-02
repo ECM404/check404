@@ -1,13 +1,13 @@
-from . import testing, behaviors
+from . import check, behaviors
 
 
 def main():
-    check = testing.Check(
+    c = check.Check(
             file='b.out',
-            input='5',
-            expect='5',
+            inputs=['5'],
+            expect=['5'],
             run_behavior=behaviors.iostream_run,
             validation_behavior=behaviors.iostream_validation
             )
-    result = check.run()
+    result = c.run()
     print(result)
