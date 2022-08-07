@@ -7,7 +7,7 @@ import pprint
 def main():
     p = Parser()
     p.generate_tree()
-    pprint.pprint(p.check_tree)
+    print(p.check_tree[0][0].run())
     # c = check.Check(
     #         file='b.out',
     #         inputs=['5'],

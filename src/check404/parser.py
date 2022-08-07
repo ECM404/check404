@@ -26,7 +26,9 @@ class Parser():
         self.yml_dict = flatten_dict(read_yml(self.test_path))
 
     def generate_tree(self):
-        """Generates a check tree and returns the root node."""
+        """Generates a check tree using a list of lists.
+        TODO - Real tree implementation
+        """
         tree = []
         files = set()
         i = -1

@@ -96,7 +96,7 @@ def iostream_validation(check: 'Check', output: str) -> CheckResult:
         return CheckResult(CheckState.FAILED, msg)
 
 
-def compilation_run(check: 'Check', dll: bool = False) -> CheckResult:
+def compilation_run(check: 'Check') -> CheckResult:
     """Compilation run behavior to compose Check. Uses gcc for compilation.
 
     Parameters:
@@ -105,38 +105,42 @@ def compilation_run(check: 'Check', dll: bool = False) -> CheckResult:
     """
 
     dirpath, filename = os.path.split(check.file)
-    output_dir = "dll" if dll else "bin"
-    output_ext = ".so" if dll else ".out"
-    output_path = f"./{output_dir}/{filename.replace('.c', output_ext)}"
-    if not dll and not os.path.isdir('./bin'):
+    if not os.path.isdir('./bin'):
         os.mkdir('./bin')
-    elif dll and not os.path.isdir('./dll'):
+    elif not os.path.isdir('./dll'):
         os.mkdir('./dll')
-    command = ['gcc', check.file, '-o', output_path]
-    flags = ['-fPIC', '-shared'] if dll else []
-    result = subprocess.run(command + flags,
-                            stdin=PIPE,
-                            stdout=PIPE,
-                            stderr=PIPE,
-                            encoding='utf-8')
-    if not result.returncode == 0:
-        msg = (f"Não foi possível compilar o arquivo {check.file}."
-               f" O erro relatado pelo gcc foi:\n{result.stderr}")
+    dll_path = f"./{dirpath}/dll/{filename.replace('.c', '.so')}"
+    bin_path = f"./{dirpath}/bin/{filename.replace('.c', '.o')}"
+    dll_cmd = ['gcc', check.file, '-o', dll_path, '-fPIC', '-shared']
+    bin_cmd = ['gcc', check.file, '-o', bin_path]
+    dll_result = subprocess.run(dll_cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE,
+                                encoding='utf-8')
+    bin_result = subprocess.run(bin_cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE,
+                                encoding='utf-8')
+    if not bin_result.returncode == 0:
+        msg = (f"Erro ao compilar o arquivo {check.file} como executável."
+               f" O erro relatado pelo gcc foi:\n{bin_result.stderr}")
         return CheckResult(CheckState.ERROR, msg)
-    return check.validate(filename=output_path)
+    if not dll_result.returncode == 0:
+        msg = (f"Erro ao compilar o arquivo {check.file} como dll."
+               f" O erro relatado pelo gcc foi:\n{dll_result.stderr}")
+        return CheckResult(CheckState.ERROR, msg)
+    filenames = [bin_path, dll_path]
+    return check.validate(filenames=filenames)
 
 
-def file_validation(check: 'Check', filename: str) -> CheckResult:
-    """File validation behavior to compose Check. Checks if file exists
+def file_validation(check: 'Check', filenames: list) -> CheckResult:
+    """File validation behavior to compose Check. Checks if each file in a
+    filename list exists.
 
     Parameters:
         check -- Check class instance. Should be passed as 'self'
-        filename -- Name of file to be checked
+        filenames -- List of filenames to be checked
     """
-
-    if os.path.isfile(filename):
-        msg = "Compilação bem sucedida!"
-        return CheckResult(CheckState.PASSED, msg)
-    else:
-        msg = "Arquivo compilado não foi encontrado após compilação."
-        return CheckResult(CheckState.FAILED, msg)
+    for filename in filenames:
+        if not os.path.isfile(filename):
+            _, name = os.path.split(filename)
+            msg = f"Arquivo compilado {name} não foi encontrado."
+            return CheckResult(CheckState.FAILED, msg)
+    msg = "Compilação bem sucedida!"
+    return CheckResult(CheckState.PASSED, msg)
