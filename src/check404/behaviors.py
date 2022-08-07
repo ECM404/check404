@@ -1,13 +1,29 @@
-from .check import Check, CheckResult, CheckState, TIMEOUT
 from .types import parse_types, get_args
 from subprocess import PIPE
+from collections import namedtuple
+from enum import Enum
 from typing import List
+import typing
 import subprocess
 import os
 import ctypes
 
+if typing.TYPE_CHECKING:
+    from .check import Check
 
-def function_run(check: Check, func: str, types: List[str]) -> CheckResult:
+TIMEOUT = 2  # seconds
+
+CheckResult = namedtuple("CheckResult", ['state', 'msg'])
+
+
+class CheckState(Enum):
+    """Enum that stores state of a Check result."""
+    ERROR = 1
+    PASSED = 2
+    FAILED = 3
+
+
+def function_run(check: 'Check', func: str, types: List[str]) -> CheckResult:
     """Run behavior to compose Check class.
     Simple function run. Uses dll compiled from c file and runs some function
     inside of it. Can be used with io_validation.
@@ -27,12 +43,12 @@ def function_run(check: Check, func: str, types: List[str]) -> CheckResult:
         msg = f"A função '{func}' não foi encontrada."
         return CheckResult(CheckState.ERROR, msg)
     c_func.restype, c_func.argtypes = parse_types(types)
-    arglist = get_args(check.inputs, c_func.argtypes)
+    arglist = get_args(check.input, c_func.argtypes)
     output = c_func(*arglist)
     return check.validate(output=str(output))
 
 
-def iostream_run(check: Check) -> CheckResult:
+def iostream_run(check: 'Check') -> CheckResult:
     """Run behavior to compose Check class.
     Simple running behavior. Run entire program as subprocess.
     Caputres stdout to be passed as argument to validation method.
@@ -60,7 +76,7 @@ def iostream_run(check: Check) -> CheckResult:
     return check.validate(output=output)
 
 
-def iostream_validation(check: Check, output: str) -> CheckResult:
+def iostream_validation(check: 'Check', output: str) -> CheckResult:
     """Validation behavior to compose Check class.
     Simple check to see if output matches exactly what was expected
 
@@ -80,7 +96,7 @@ def iostream_validation(check: Check, output: str) -> CheckResult:
         return CheckResult(CheckState.FAILED, msg)
 
 
-def compilation_run(check: Check, dll: bool = False) -> CheckResult:
+def compilation_run(check: 'Check', dll: bool = False) -> CheckResult:
     """Compilation run behavior to compose Check. Uses gcc for compilation.
 
     Parameters:
@@ -110,7 +126,7 @@ def compilation_run(check: Check, dll: bool = False) -> CheckResult:
     return check.validate(filename=output_path)
 
 
-def file_validation(check: Check, filename: str) -> CheckResult:
+def file_validation(check: 'Check', filename: str) -> CheckResult:
     """File validation behavior to compose Check. Checks if file exists
 
     Parameters:

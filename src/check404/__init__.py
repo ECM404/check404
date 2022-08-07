@@ -1,9 +1,13 @@
-from . import check, behaviors, parser
+from . import check, behaviors
+from .parser import Parser
+from anytree import RenderTree,  PreOrderIter
 import pprint
 
 
 def main():
-    pprint.pprint(parser.Parser().parse_yaml())
+    p = Parser()
+    p.generate_tree()
+    pprint.pprint(p.check_tree)
     # c = check.Check(
     #         file='b.out',
     #         inputs=['5'],

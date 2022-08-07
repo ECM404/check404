@@ -1,24 +1,21 @@
 from __future__ import annotations
-from typing import Any, List, Optional
-from dataclasses import dataclass
-from collections import namedtuple
+from typing import Any
 from collections.abc import Callable
-from enum import Enum
+from . import behaviors
+from .behaviors import CheckResult
+from anytree import NodeMixin
 
-TIMEOUT = 2  # seconds
+RUN_BEHAVIORS = {
+    "stdin": behaviors.iostream_run,
+    "input": behaviors.function_run
+}
 
-CheckResult = namedtuple("CheckResult", ['state', 'msg'])
-
-
-class CheckState(Enum):
-    """Enum that stores state of a Check result."""
-    ERROR = 1
-    PASSED = 2
-    FAILED = 3
+VALIDATION_BEHAVIORS = {
+    "stdout": behaviors.iostream_validation,
+}
 
 
-@dataclass
-class Check():
+class Check(NodeMixin):
     """Base class for check404 Check.
 
     Attributes:
@@ -29,11 +26,37 @@ class Check():
         validation_behavior -- Function used as abstract validate method
     """
 
+    name: str
     file: str
-    inputs: Optional[List] = None
-    expect: Optional[List] = None
-    run_behavior: Callable = lambda default_function: None
-    validation_behavior: Callable = lambda default_function: None
+    weight: float
+    input: str = ""
+    output: str = ""
+    run_behavior: Callable
+    validation_behavior: Callable
+    parent: Any = None
+    children: Any = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self.name = args[0]
+        self.file = kwargs["file"]
+        self.weight = kwargs["weight"]
+        for behavior in RUN_BEHAVIORS:
+            if behavior in kwargs:
+                self.input = kwargs[behavior]
+                self.run_behavior = RUN_BEHAVIORS[behavior]
+        if self.input == "":
+            self.run_behavior = behaviors.compilation_run
+        for behavior in VALIDATION_BEHAVIORS:
+            if behavior in kwargs:
+                self.output = kwargs[behavior]
+                self.validation_behavior = VALIDATION_BEHAVIORS[behavior]
+        if self.output == "":
+            self.validation_behavior = behaviors.file_validation
+        if "parent" in kwargs:
+            self.parent = kwargs["parent"]
+        if "children" in kwargs:
+            self.children = kwargs["children"]
 
     def run(self, **kwargs: Any) -> CheckResult:
         """Abstract method implemented by run_behavior"""
@@ -42,3 +65,11 @@ class Check():
     def validate(self, **kwargs: Any) -> CheckResult:
         """Abstract method implemented by validation_behavior"""
         return self.validation_behavior(self, **kwargs)
+
+    def __repr__(self) -> str:
+        return (f"{self.name}(w={self.weight}, i={self.input}, o={self.output}"
+                f", r={self.run_behavior}, v={self.validation_behavior})")
+
+    def __str__(self) -> str:
+        return (f"{self.name}(w={self.weight}, i={self.input}, o={self.output}"
+                f", r={self.run_behavior}, v={self.validation_behavior})")
