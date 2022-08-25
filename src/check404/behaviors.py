@@ -13,7 +13,12 @@ if typing.TYPE_CHECKING:
 
 TIMEOUT = 2  # seconds
 
-CheckResult = namedtuple("CheckResult", ['state', 'msg'])
+
+class CheckResult (namedtuple("CheckResult", ['state', 'msg'])):
+    """Named tuple with custom str function. Represents the check result."""
+
+    def __str__(self):
+        return self.msg
 
 
 class CheckState(Enum):
@@ -23,7 +28,7 @@ class CheckState(Enum):
     FAILED = 3
 
 
-def function_run(check: 'Check', func: str, types: List[str]) -> CheckResult:
+def function_run(check: 'Check') -> CheckResult:
     """Run behavior to compose Check class.
     Simple function run. Uses dll compiled from c file and runs some function
     inside of it. Can be used with io_validation.
@@ -32,13 +37,23 @@ def function_run(check: 'Check', func: str, types: List[str]) -> CheckResult:
         check -- Check class instance. Should be passed as 'self'
         function -- function that needs to be run
     """
+    _, filename = os.path.split(check.file)
+    dll_name = filename.replace('.c', '.dll')
+    # type name(type name, type name)
+    functype = check.function[:check.function.index(" ")]
+    funcname = check.function[
+                        check.function.index(" "):check.function.index("(")
+                        ]
+    argtypes = check.function[
+                        check.function.index("("):check.function.index(")")
+                        ]
     try:
-        c_lib = ctypes.CDLL(f"./{check.file}")
+        c_lib = ctypes.CDLL(f"./dll/{dll_name}")
     except OSError:
-        msg = f"O arquivo '{check.file}' não foi encontrado."
+        msg = f"O arquivo './dll/{dll_name}' não foi encontrado."
         return CheckResult(CheckState.ERROR, msg)
     try:
-        c_func = getattr(c_lib, func)
+        c_func = getattr(c_lib, funcname)
     except AttributeError:
         msg = f"A função '{func}' não foi encontrada."
         return CheckResult(CheckState.ERROR, msg)
@@ -56,20 +71,21 @@ def iostream_run(check: 'Check') -> CheckResult:
     Parameters:
         check -- Check class instance. Should be passed as 'self'
     """
-    if check.inputs is None:
-        check.inputs = []
+    _, filename = os.path.split(check.file)
+    executable_name = filename.replace('.c', '.out')
+    if not check.input:
+        check.input = ""
 
     try:
-        process = subprocess.Popen([f"./{check.file}"],
+        process = subprocess.Popen([f"./bin/{executable_name}"],
                                    stdin=PIPE,
                                    stdout=PIPE,
                                    encoding='utf-8')
     except OSError:
-        msg = f"O arquivo '{check.file}' não foi encontrado."
+        msg = f"O arquivo './bin/{executable_name}' não foi encontrado."
         return CheckResult(CheckState.ERROR, msg)
     try:
-        output, stderr = process.communicate(input="\n".join(check.inputs),
-                                             timeout=TIMEOUT)
+        output, _ = process.communicate(check.input+"\n", timeout=TIMEOUT)
     except subprocess.TimeoutExpired as e:
         msg = f"Programa não respondeu após {e.timeout} segundos."
         return CheckResult(CheckState.ERROR, msg)
@@ -85,14 +101,12 @@ def iostream_validation(check: 'Check', output: str) -> CheckResult:
         output -- Stdout from run method.
     """
 
-    if check.expect is None:
-        check.expect = []
-    if "".join(check.expect) in output:
+    if check.output in output:
         msg = "Teste concluído com sucesso!"
         return CheckResult(CheckState.PASSED, msg)
     else:
-        msg = (f"Não passou. Esperava encontrar '{check.expect}' na saída."
-               f"Encontrei '{output}'")
+        msg = (f"Não passou. Esperava encontrar '{check.output}' na saída."
+               f" Saída encontrada: '{output}'")
         return CheckResult(CheckState.FAILED, msg)
 
 
@@ -104,13 +118,13 @@ def compilation_run(check: 'Check') -> CheckResult:
         dll -- Flag that defines if it will compile as dll
     """
 
-    dirpath, filename = os.path.split(check.file)
+    _, filename = os.path.split(check.file)
     if not os.path.isdir('./bin'):
         os.mkdir('./bin')
     elif not os.path.isdir('./dll'):
         os.mkdir('./dll')
-    dll_path = f"./{dirpath}/dll/{filename.replace('.c', '.so')}"
-    bin_path = f"./{dirpath}/bin/{filename.replace('.c', '.o')}"
+    dll_path = f"./dll/{filename.replace('.c', '.so')}"
+    bin_path = f"./bin/{filename.replace('.c', '.out')}"
     dll_cmd = ['gcc', check.file, '-o', dll_path, '-fPIC', '-shared']
     bin_cmd = ['gcc', check.file, '-o', bin_path]
     dll_result = subprocess.run(dll_cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE,

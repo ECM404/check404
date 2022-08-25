@@ -5,6 +5,18 @@ from typing import Any, Optional, List
 FuncTypes = namedtuple("FuncTypes", ["restype", "argtypes"])
 c_any = Any
 
+TYPE_MAP = {
+    "int": ctypes.c_int,
+    "float": ctypes.c_float,
+    "double": ctypes.c_double,
+    "char*": ctypes.c_wchar_p,
+    "char": ctypes.c_wchar_t
+    }
+
+
+def get_ctype(type: str) -> c_any:
+    """Function that parses a string and returns the equivalent ctype var type."""
+
 
 def parse_types(types: List) -> FuncTypes:
     res, args = types

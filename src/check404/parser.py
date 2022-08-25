@@ -22,7 +22,7 @@ class Parser():
     check_tree: list
 
     def __init__(self):
-        self.test_path = get_glob_path('*.yml')
+        self.test_path = get_glob_path('**/*.yml')
         self.yml_dict = flatten_dict(read_yml(self.test_path))
 
     def generate_tree(self):
@@ -59,7 +59,8 @@ def flatten_dict(d: Dict) -> Dict:
             new_value = new_d.pop(key)
             for stdin, stdout in zip(value["stdin"], value["stdout"]):
                 new_value["stdin"], new_value["stdout"] = stdin, stdout
-                new_d[f"{key}(in:{stdin}, out:{stdout})"] = new_value.copy()
+                stdin_noret = stdin.replace("\n", " -> ")
+                new_d[f"{key}(in:{stdin_noret})"] = new_value.copy()
     return new_d
 
 

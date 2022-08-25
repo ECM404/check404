@@ -29,6 +29,7 @@ class Check(NodeMixin):
     name: str
     file: str
     weight: float
+    function: str = ""
     input: str = ""
     output: str = ""
     run_behavior: Callable
@@ -53,6 +54,8 @@ class Check(NodeMixin):
                 self.validation_behavior = VALIDATION_BEHAVIORS[behavior]
         if self.output == "":
             self.validation_behavior = behaviors.file_validation
+        if "function" in kwargs:
+            self.function = kwargs["function"]
         if "parent" in kwargs:
             self.parent = kwargs["parent"]
         if "children" in kwargs:
