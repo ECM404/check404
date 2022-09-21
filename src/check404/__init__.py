@@ -4,7 +4,6 @@ from pprint import pprint
 
 def main():
     p = Parser()
-    p.generate_tree()
-    for file in p.check_tree:
-        for check in file:
-            print(f"{check.name} - {check.run()}")
+    check_tree = p.generate_tree()
+    for node in check_tree.depth_first_search(check_tree.root):
+        print(f" {node.check.name}\n{node.check.run()}")

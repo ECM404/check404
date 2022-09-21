@@ -1,5 +1,6 @@
 from yaml import safe_load, YAMLError
 from .check import Check
+from .tree import Tree, Node
 from typing import Dict
 import os
 import glob
@@ -19,30 +20,41 @@ class Parser():
 
     yml_dict: Dict
     test_path: str = ""
-    check_tree: list
 
     def __init__(self):
         self.test_path = get_glob_path('**/*.yml')
         self.yml_dict = flatten_dict(read_yml(self.test_path))
 
-    def generate_tree(self):
+    def generate_tree(self) -> Tree:
         """Generates a check tree using a list of lists.
         TODO - Real tree implementation
         """
-        tree = []
-        files = set()
-        i = -1
-        for name, conf in self.yml_dict.items():
-            file = conf["file"]
-            if file not in files:
-                files.add(file)
-                comp_check = Check(f"Compilation {file}", file=file, weight=1)
-                tree.append([comp_check])
-                i += 1
-            tree[i].append(
-                Check(name, **conf, parent=tree[i][0])
-            )
-        self.check_tree = tree
+        root = Node()
+        tree = Tree(root=root)
+        files = separate_by_files(self.yml_dict)
+        flist = list(files.keys())
+        flist.sort()
+        for file in flist:
+            comp_check = Check(f"Compilando {file}", file=file, weight=1)
+            froot = Node(check=comp_check, parent=root)
+            tree.add_node(froot)
+            nodes = list(files[file].keys())
+            nodes.sort()
+            for n in nodes:
+                conf = files[file][n]
+                temp_check = Check(n, **conf)
+                tree.add_node(Node(check=temp_check, parent=froot))
+        return tree
+
+
+def separate_by_files(d: Dict) -> Dict:
+    """Get the flattened dictionary and separate it by files."""
+    unique_files = set([d[x]['file'] for x in d])
+    out = {}
+    for f in unique_files:
+        temp_dict = {x: d[x] for x in d if f in d[x]['file']}
+        out[f] = temp_dict
+    return out
 
 
 def flatten_dict(d: Dict) -> Dict:
@@ -81,7 +93,7 @@ def get_glob_path(pattern: str) -> str:
     """Parses working dir in search of a test configuration file.
     Returns its decoded path
     """
-    found = glob.glob(pattern)[0]
+    found = glob.glob(pattern, recursive=True)
     if isinstance(found, list):
         return found[0]
     return found

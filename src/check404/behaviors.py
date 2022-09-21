@@ -13,12 +13,19 @@ if typing.TYPE_CHECKING:
 
 TIMEOUT = 2  # seconds
 
+RED = "\u001b[31;1m"
+GREEN = "\u001b[32;1m"
+YELLOW = "\u001b[33;1m"
+RESET = "\u001b[0m"
+
+COLORS = {"ERROR": RED, "PASSED": GREEN, "FAILED": YELLOW}
+
 
 class CheckResult (namedtuple("CheckResult", ['state', 'msg'])):
     """Named tuple with custom str function. Represents the check result."""
 
     def __str__(self):
-        return self.msg
+        return f"{self.state} {self.msg}"
 
 
 class CheckState(Enum):
@@ -26,6 +33,9 @@ class CheckState(Enum):
     ERROR = 1
     PASSED = 2
     FAILED = 3
+
+    def __str__(self):
+        return f"[{COLORS[self.name]}{self.name}{RESET}]"
 
 
 def function_run(check: 'Check') -> CheckResult:
@@ -55,7 +65,7 @@ def function_run(check: 'Check') -> CheckResult:
     try:
         c_func = getattr(c_lib, funcname)
     except AttributeError:
-        msg = f"A função '{func}' não foi encontrada."
+        msg = f"A função '{funcname}' não foi encontrada."
         return CheckResult(CheckState.ERROR, msg)
     c_func.restype, c_func.argtypes = parse_types(types)
     arglist = get_args(check.input, c_func.argtypes)
@@ -82,12 +92,12 @@ def iostream_run(check: 'Check') -> CheckResult:
                                    stdout=PIPE,
                                    encoding='utf-8')
     except OSError:
-        msg = f"O arquivo './bin/{executable_name}' não foi encontrado."
+        msg = f"O arquivo './bin/{executable_name}' não foi encontrado. "
         return CheckResult(CheckState.ERROR, msg)
     try:
         output, _ = process.communicate(check.input+"\n", timeout=TIMEOUT)
     except subprocess.TimeoutExpired as e:
-        msg = f"Programa não respondeu após {e.timeout} segundos."
+        msg = f"Programa não respondeu após {e.timeout} segundos. "
         return CheckResult(CheckState.ERROR, msg)
     return check.validate(output=output)
 
@@ -102,11 +112,10 @@ def iostream_validation(check: 'Check', output: str) -> CheckResult:
     """
 
     if check.output in output:
-        msg = "Teste concluído com sucesso!"
+        msg = "Teste concluído com sucesso! "
         return CheckResult(CheckState.PASSED, msg)
     else:
-        msg = (f"Não passou. Esperava encontrar '{check.output}' na saída."
-               f" Saída encontrada: '{output}'")
+        msg = (f"Não passou. Esperava encontrar '{check.output}' na saída. ")
         return CheckResult(CheckState.FAILED, msg)
 
 
@@ -132,12 +141,10 @@ def compilation_run(check: 'Check') -> CheckResult:
     bin_result = subprocess.run(bin_cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE,
                                 encoding='utf-8')
     if not bin_result.returncode == 0:
-        msg = (f"Erro ao compilar o arquivo {check.file} como executável."
-               f" O erro relatado pelo gcc foi:\n{bin_result.stderr}")
+        msg = (f"Erro ao compilar o arquivo {check.file} como executável. ")
         return CheckResult(CheckState.ERROR, msg)
     if not dll_result.returncode == 0:
-        msg = (f"Erro ao compilar o arquivo {check.file} como dll."
-               f" O erro relatado pelo gcc foi:\n{dll_result.stderr}")
+        msg = (f"Erro ao compilar o arquivo {check.file} como dll. ")
         return CheckResult(CheckState.ERROR, msg)
     filenames = [bin_path, dll_path]
     return check.validate(filenames=filenames)
@@ -154,7 +161,7 @@ def file_validation(check: 'Check', filenames: list) -> CheckResult:
     for filename in filenames:
         if not os.path.isfile(filename):
             _, name = os.path.split(filename)
-            msg = f"Arquivo compilado {name} não foi encontrado."
+            msg = f"Arquivo compilado {name} não foi encontrado. "
             return CheckResult(CheckState.FAILED, msg)
     msg = "Compilação bem sucedida!"
     return CheckResult(CheckState.PASSED, msg)
