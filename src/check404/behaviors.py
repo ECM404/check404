@@ -65,7 +65,11 @@ def function_run(check: 'Check') -> CheckResult:
     c_arg_types = [parse_ctype(x) for x in argtypes]
     c_func.restype, c_func.argtypes = c_ret_type, c_arg_types
     c_args = get_args(c_arg_types, check.input)
-    output = c_func(*c_args)
+    if check.varpos != -1:
+        c_func(*c_args)
+        output = c_args[check.varpos]
+    else:
+        output = c_func(*c_args)
     return check.validate(output=output)
 
 
@@ -84,6 +88,26 @@ def function_validation(check: 'Check', output: Any) -> CheckResult:
     else:
         msg = (f"Não passou. "
                f"Esperava encontrar {check.output} ± {APPROX} na saída. ")
+        return CheckResult(CheckState.FAILED, msg)
+
+
+def variable_validation(check: 'Check', output: Any) -> CheckResult:
+    """Validation behavior to compose Check class.
+    Simple check to see if variable matches expectation after function run.
+
+    Parameters:
+        check -- Check class instance. Should be passed as 'self'
+        output -- Stdout from run method.
+    """
+    if isinstance(check.output, list):
+        output = list(output)[:len(check.output)]
+    if check.output == output:
+        msg = "Teste concluído com sucesso! "
+        return CheckResult(CheckState.PASSED, msg)
+    else:
+        msg = (f"Não passou. "
+               f"Esperava encontrar {check.output} na saída. "
+               f" Encontrei {output}.")
         return CheckResult(CheckState.FAILED, msg)
 
 
@@ -156,7 +180,8 @@ def compilation_run(check: 'Check') -> CheckResult:
     bin_result = subprocess.run(bin_cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE,
                                 encoding='utf-8')
     if not bin_result.returncode == 0:
-        msg = (f"Erro ao compilar o arquivo {check.file} como executável. ")
+        msg = (f"Erro ao compilar o arquivo {check.file} como executável. "
+               f" {bin_result.stderr}")
         return CheckResult(CheckState.ERROR, msg)
     if not dll_result.returncode == 0:
         msg = (f"Erro ao compilar o arquivo {check.file} como dll. ")

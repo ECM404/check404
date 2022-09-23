@@ -12,7 +12,8 @@ RUN_BEHAVIORS = {
 
 VALIDATION_BEHAVIORS = {
     "stdout": behaviors.iostream_validation,
-    "output": behaviors.function_validation
+    "output": behaviors.function_validation,
+    "varout": behaviors.variable_validation
 }
 
 
@@ -31,12 +32,11 @@ class Check(NodeMixin):
     file: str
     weight: float
     function: str = ""
+    varpos: int = -1
     input: Any = None
     output: str = ""
     run_behavior: Callable
     validation_behavior: Callable
-    parent: Any = None
-    children: Any = None
 
     def __init__(self, *args, **kwargs):
         super().__init__()
@@ -57,10 +57,8 @@ class Check(NodeMixin):
             self.validation_behavior = behaviors.file_validation
         if "function" in kwargs:
             self.function = kwargs["function"]
-        if "parent" in kwargs:
-            self.parent = kwargs["parent"]
-        if "children" in kwargs:
-            self.children = kwargs["children"]
+        if "varpos" in kwargs:
+            self.varpos = kwargs["varpos"]
 
     def run(self, **kwargs: Any) -> CheckResult:
         """Abstract method implemented by run_behavior"""

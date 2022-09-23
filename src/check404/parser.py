@@ -69,7 +69,10 @@ def flatten_dict(d: Dict) -> Dict:
     for key, value in d.items():
         if "input" in value:
             in_key = "input"
-            out_key = "output"
+            if "varout" in value:
+                out_key = "varout"
+            else:
+                out_key = "output"
         else:
             in_key = "stdin"
             out_key = "stdout"
