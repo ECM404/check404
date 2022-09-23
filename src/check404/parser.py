@@ -67,12 +67,19 @@ def flatten_dict(d: Dict) -> Dict:
     """
     new_d = d.copy()
     for key, value in d.items():
-        if isinstance(value["stdin"], list):
+        if "input" in value:
+            in_key = "input"
+            out_key = "output"
+        else:
+            in_key = "stdin"
+            out_key = "stdout"
+        if isinstance(value[in_key], list):
             new_value = new_d.pop(key)
-            for stdin, stdout in zip(value["stdin"], value["stdout"]):
-                new_value["stdin"], new_value["stdout"] = stdin, stdout
-                stdin_noret = stdin.replace("\n", " -> ")
-                new_d[f"{key}(in:{stdin_noret})"] = new_value.copy()
+            for stdin, stdout in zip(value[in_key], value[out_key]):
+                new_value[in_key], new_value[out_key] = stdin, stdout
+                if isinstance(stdin, str):
+                    stdin = stdin.replace("\n", "  ")
+                new_d[f"{key}(in:{stdin})"] = new_value.copy()
     return new_d
 
 

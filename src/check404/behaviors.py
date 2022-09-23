@@ -1,8 +1,8 @@
-from .types import parse_types, get_args
+from .types import parse_function, parse_ctype, get_args
 from subprocess import PIPE
 from collections import namedtuple
 from enum import Enum
-from typing import List
+from typing import Any
 import typing
 import subprocess
 import os
@@ -48,29 +48,43 @@ def function_run(check: 'Check') -> CheckResult:
         function -- function that needs to be run
     """
     _, filename = os.path.split(check.file)
-    dll_name = filename.replace('.c', '.dll')
-    # type name(type name, type name)
-    functype = check.function[:check.function.index(" ")]
-    funcname = check.function[
-                        check.function.index(" "):check.function.index("(")
-                        ]
-    argtypes = check.function[
-                        check.function.index("("):check.function.index(")")
-                        ]
+    dll_name = filename.replace('.c', '.so')
     try:
         c_lib = ctypes.CDLL(f"./dll/{dll_name}")
     except OSError:
         msg = f"O arquivo './dll/{dll_name}' não foi encontrado."
         return CheckResult(CheckState.ERROR, msg)
+
+    ret_type, funcname, argtypes = parse_function(check.function)
     try:
         c_func = getattr(c_lib, funcname)
     except AttributeError:
         msg = f"A função '{funcname}' não foi encontrada."
         return CheckResult(CheckState.ERROR, msg)
-    c_func.restype, c_func.argtypes = parse_types(types)
-    arglist = get_args(check.input, c_func.argtypes)
-    output = c_func(*arglist)
-    return check.validate(output=str(output))
+    c_ret_type = parse_ctype(ret_type)
+    c_arg_types = [parse_ctype(x) for x in argtypes]
+    c_func.restype, c_func.argtypes = c_ret_type, c_arg_types
+    c_args = get_args(c_arg_types, check.input)
+    output = c_func(*c_args)
+    return check.validate(output=output)
+
+
+def function_validation(check: 'Check', output: Any) -> CheckResult:
+    """Validation behavior to compose Check class.
+    Simple check to see if output matches exactly output from function
+
+    Parameters:
+        check -- Check class instance. Should be passed as 'self'
+        output -- Stdout from run method.
+    """
+    APPROX = 0.2
+    if abs(check.output - output) < APPROX:
+        msg = "Teste concluído com sucesso! "
+        return CheckResult(CheckState.PASSED, msg)
+    else:
+        msg = (f"Não passou. "
+               f"Esperava encontrar {check.output} ± {APPROX} na saída. ")
+        return CheckResult(CheckState.FAILED, msg)
 
 
 def iostream_run(check: 'Check') -> CheckResult:
@@ -111,11 +125,13 @@ def iostream_validation(check: 'Check', output: str) -> CheckResult:
         output -- Stdout from run method.
     """
 
+    output = output.replace("\n", "")
     if check.output in output:
         msg = "Teste concluído com sucesso! "
         return CheckResult(CheckState.PASSED, msg)
     else:
-        msg = (f"Não passou. Esperava encontrar '{check.output}' na saída. ")
+        msg = (f"Não passou. Esperava encontrar '{check.output}' na saída. "
+               f"\n{' ':9s}Encontrei '{output}'")
         return CheckResult(CheckState.FAILED, msg)
 
 
@@ -128,10 +144,9 @@ def compilation_run(check: 'Check') -> CheckResult:
     """
 
     _, filename = os.path.split(check.file)
-    if not os.path.isdir('./bin'):
-        os.mkdir('./bin')
-    elif not os.path.isdir('./dll'):
-        os.mkdir('./dll')
+    os.system("rm -rf ./dll ./bin")
+    os.mkdir('./bin')
+    os.mkdir('./dll')
     dll_path = f"./dll/{filename.replace('.c', '.so')}"
     bin_path = f"./bin/{filename.replace('.c', '.out')}"
     dll_cmd = ['gcc', check.file, '-o', dll_path, '-fPIC', '-shared']

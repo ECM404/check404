@@ -13,50 +13,40 @@ TYPE_MAP = {
     }
 
 
-def parse_types(types: List) -> Tuple:
-    res, args = types
-    argtypes = []
-    restype = parse_type(res)
-    for arg in args:
-        argtypes.append(parse_type(arg))
-    return restype, argtypes
+def parse_function(function_string: str) -> Tuple:
+    """Function that takes a c declaration and extracts:
+        * Return type
+        * Function name
+        * Argument types
 
-
-def parse_type(type_name: str) -> Any:
-    if is_pointer(type_name):
-        restype = ctypes.POINTER(getattr(ctypes, type_name[1:]))
-    elif is_array(type_name):
-        c_type, qty = type_name.split(",")
-        restype = getattr(ctypes, c_type) * int(qty)
-    else:
-        restype = getattr(ctypes, type_name)
-    return restype
-
-
-def get_args(inputs: Optional[List], argtypes: List[c_any]) -> List[c_any]:
-    """Get all input arguments from c_types list
+    Returns everything in a Tuple
     """
-    if inputs is None:
-        inputs = []
-    arglist = []
-    for input, argtype in zip(inputs, argtypes):
-        arglist.append(get_arg(input, argtype))
-    return arglist
+    open_par_index = function_string.find('(')
+    closing_par_index = function_string.find(')')
+    before_par = function_string[:open_par_index]
+    inside_par = function_string[open_par_index + 1:closing_par_index]
+    return_type, function_name = before_par.split()
+    argument_types = inside_par.replace(" ", "").split(",")
+    return return_type, function_name, argument_types
 
 
-def get_arg(input: Any, c_type: c_any) -> c_any:
-    """Get single argument from c_type
+def get_args(c_arg_types: c_any, check_in: list) -> list:
+    out = []
+    for c_arg_type, check_input in zip(c_arg_types, check_in):
+        if isinstance(check_input, list):
+            out.append(c_arg_type(*check_input))
+        else:
+            out.append(c_arg_type(check_input))
+    return out
+
+
+def parse_ctype(type_str: str) -> c_any:
+    """Function that takes a string definition of a type and maps it to its
+    adequate c_type.
     """
-    return c_type(input)
-
-
-def is_pointer(type_name: str) -> bool:
-    """Checks if type is pointer. Returns True or False.
-    """
-    return type_name[0] == "*"
-
-
-def is_array(type_name: str) -> bool:
-    """Checks if type is array. Returns True or False.
-    """
-    return "," in type_name
+    # First, we check if it is an array
+    if "[" in type_str:
+        base_type = type_str[:type_str.find("[")]
+        arr_size = int(type_str[type_str.find("[")+1:type_str.find("]")])
+        return TYPE_MAP[base_type] * arr_size
+    return TYPE_MAP[type_str]

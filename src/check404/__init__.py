@@ -1,9 +1,11 @@
 from .parser import Parser
-from pprint import pprint
+from os import system
 
 
 def main():
     p = Parser()
     check_tree = p.generate_tree()
     for node in check_tree.depth_first_search(check_tree.root):
-        print(f" {node.check.name}\n{node.check.run()}")
+        print(f"{'':>8s} {node.check.name}\n{node.check.run()}\n")
+    print(f"{'':>8s} Testes encerrados. Limpando diretório.")
+    system("rm -rf ./dll ./bin")

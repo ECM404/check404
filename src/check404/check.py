@@ -12,6 +12,7 @@ RUN_BEHAVIORS = {
 
 VALIDATION_BEHAVIORS = {
     "stdout": behaviors.iostream_validation,
+    "output": behaviors.function_validation
 }
 
 
@@ -30,7 +31,7 @@ class Check(NodeMixin):
     file: str
     weight: float
     function: str = ""
-    input: str = ""
+    input: Any = None
     output: str = ""
     run_behavior: Callable
     validation_behavior: Callable
@@ -46,7 +47,7 @@ class Check(NodeMixin):
             if behavior in kwargs:
                 self.input = kwargs[behavior]
                 self.run_behavior = RUN_BEHAVIORS[behavior]
-        if self.input == "":
+        if self.input is None:
             self.run_behavior = behaviors.compilation_run
         for behavior in VALIDATION_BEHAVIORS:
             if behavior in kwargs:
