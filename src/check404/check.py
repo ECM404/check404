@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Any
 from collections.abc import Callable
 from . import behaviors
-from .behaviors import CheckResult
+from .behaviors import CheckResult, CheckState
 from anytree import NodeMixin
 
 RUN_BEHAVIORS = {
@@ -35,6 +35,7 @@ class Check(NodeMixin):
     varpos: int = -1
     input: Any = None
     output: str = ""
+    result: CheckResult = CheckResult(CheckState.NONE, "Teste não foi rodado.")
     run_behavior: Callable
     validation_behavior: Callable
 
@@ -62,7 +63,8 @@ class Check(NodeMixin):
 
     def run(self, **kwargs: Any) -> CheckResult:
         """Abstract method implemented by run_behavior"""
-        return self.run_behavior(self, **kwargs)
+        self.result = self.run_behavior(self, **kwargs)
+        return self.result
 
     def validate(self, **kwargs: Any) -> CheckResult:
         """Abstract method implemented by validation_behavior"""

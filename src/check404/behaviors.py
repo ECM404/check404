@@ -18,7 +18,7 @@ GREEN = "\u001b[32;1m"
 YELLOW = "\u001b[33;1m"
 RESET = "\u001b[0m"
 
-COLORS = {"ERROR": RED, "PASSED": GREEN, "FAILED": YELLOW}
+COLORS = {"ERROR": RED, "PASSED": GREEN, "FAILED": YELLOW, "NONE": RESET}
 
 
 class CheckResult (namedtuple("CheckResult", ['state', 'msg'])):
@@ -30,9 +30,10 @@ class CheckResult (namedtuple("CheckResult", ['state', 'msg'])):
 
 class CheckState(Enum):
     """Enum that stores state of a Check result."""
-    ERROR = 1
-    PASSED = 2
-    FAILED = 3
+    NONE = 1
+    ERROR = 2
+    PASSED = 3
+    FAILED = 4
 
     def __str__(self):
         return f"[{COLORS[self.name]}{self.name}{RESET}]"

@@ -2,7 +2,6 @@ from yaml import safe_load, YAMLError
 from .check import Check
 from .tree import Tree, Node
 from typing import Dict
-import os
 import glob
 
 
@@ -26,64 +25,52 @@ class Parser():
         self.yml_dict = flatten_dict(read_yml(self.test_path))
 
     def generate_tree(self) -> Tree:
-        """Generates a check tree using a list of lists.
-        TODO - Real tree implementation
+        """Generates a check tree and returns it.
         """
         root = Node()
         tree = Tree(root=root)
-        files = separate_by_files(self.yml_dict)
-        flist = list(files.keys())
-        flist.sort()
-        for file in flist:
-            comp_check = Check(f"Compilando {file}", file=file, weight=1)
-            froot = Node(check=comp_check, parent=root)
-            tree.add_node(froot)
-            nodes = list(files[file].keys())
-            nodes.sort()
-            for n in nodes:
-                conf = files[file][n]
-                temp_check = Check(n, **conf)
-                tree.add_node(Node(check=temp_check, parent=froot))
+        unique_files = set(
+            [self.yml_dict[check][0]["file"] for check in self.yml_dict]
+        )
+        for file in unique_files:
+            comp_node = Node(check=Check(f"Compilando {file}",
+                             file=file, weight=1), parent=root)
+            tree.add_node(comp_node)
+            for check_name, check_configs in self.yml_dict.items():
+                for i, config in enumerate(check_configs):
+                    name = check_name if i == 0 else ""
+                    if not file == config["file"]:
+                        continue
+                    node = Node(check=Check(name, **config), parent=comp_node)
+                    tree.add_node(node)
         return tree
-
-
-def separate_by_files(d: Dict) -> Dict:
-    """Get the flattened dictionary and separate it by files."""
-    unique_files = set([d[x]['file'] for x in d])
-    out = {}
-    for f in unique_files:
-        temp_dict = {x: d[x] for x in d if f in d[x]['file']}
-        out[f] = temp_dict
-    return out
 
 
 def flatten_dict(d: Dict) -> Dict:
     """Flatten dictionary with stdin/stdout with more than 1 entry. Returns
-    the same dictionary if there is nothing to flatten
+    the same dictionary if there is nothing to flatten.
     Example:
-        {"Ex1":{"stdin":[1,2], "stdout":[2,3]}} turns into:
-        {"Ex1 (in:1, out:2)":{"stdin":"1", "stdout":"2"},
-         "Ex1 (in:2, out:3)":{"stdin":"2", "stdout":"3"}}
+        {"Ex1":{"stdin":[1,2], "stdout":[2,3]}}
+        turns into:
+        {"Ex1":[ {"stdin":"1", "stdout":"2"},
+                 {2, out:3)":{"stdin":"2", "stdout":"3"} ]}
     """
-    new_d = d.copy()
     for key, value in d.items():
-        if "input" in value:
-            in_key = "input"
-            if "varout" in value:
-                out_key = "varout"
-            else:
-                out_key = "output"
-        else:
-            in_key = "stdin"
-            out_key = "stdout"
-        if isinstance(value[in_key], list):
-            new_value = new_d.pop(key)
-            for stdin, stdout in zip(value[in_key], value[out_key]):
-                new_value[in_key], new_value[out_key] = stdin, stdout
-                if isinstance(stdin, str):
-                    stdin = stdin.replace("\n", "  ")
-                new_d[f"{key}(in:{stdin})"] = new_value.copy()
-    return new_d
+        input_key = "input" if "input" in value else "stdin"
+        # If the input is not a group, there's nothing to do...
+        if not isinstance(value[input_key], list):
+            d[value] = [d[value]]
+            continue
+        output_key = ("varout" if "varout" in value else
+                      "output" if "output" in value else "stdout")
+        new_value = []
+        for stdin, stdout in zip(value[input_key], value[output_key]):
+            partial_value = value.copy()
+            partial_value[input_key] = stdin
+            partial_value[output_key] = stdout
+            new_value.append(partial_value)
+        d[key] = new_value
+    return d
 
 
 def read_yml(path: str) -> Dict:
@@ -92,8 +79,7 @@ def read_yml(path: str) -> Dict:
         return {}
     with open(path, "r") as ymlfile:
         try:
-            data = safe_load(ymlfile)
-            return data
+            return safe_load(ymlfile)
         except YAMLError as exc:
             print(exc)
             return {}
