@@ -20,8 +20,8 @@ class Parser():
     yml_dict: Dict
     test_path: str = ""
 
-    def __init__(self):
-        self.test_path = get_glob_path('**/*.yml')
+    def __init__(self, test_path: str = '**/*.yml'):
+        self.test_path = get_glob_path(test_path)
         self.yml_dict = flatten_dict(read_yml(self.test_path))
 
     def generate_tree(self) -> Tree:
