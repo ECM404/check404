@@ -1,6 +1,6 @@
+from __future__ import annotations
 import ctypes
-from collections import namedtuple
-from typing import Any, Optional, List, Tuple
+from typing import Any, Tuple
 
 c_any = Any
 

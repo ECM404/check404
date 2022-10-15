@@ -1,8 +1,8 @@
-from yaml import safe_load, YAMLError
-from .check import Check
-from .tree import Tree, Node
-from typing import Dict
 import glob
+from typing import Dict
+from yaml import safe_load, YAMLError
+from check404.check import Check
+from check404.tree import Tree, Node
 
 
 class Parser():

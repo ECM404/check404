@@ -1,9 +1,8 @@
 from __future__ import annotations
 from typing import Any
 from collections.abc import Callable
-from . import behaviors
-from .behaviors import CheckResult, CheckState
-from anytree import NodeMixin
+from check404 import behaviors
+from check404.behaviors import CheckResult, CheckState
 
 RUN_BEHAVIORS = {
     "stdin": behaviors.iostream_run,
@@ -17,7 +16,7 @@ VALIDATION_BEHAVIORS = {
 }
 
 
-class Check(NodeMixin):
+class Check():
     """Base class for check404 Check.
 
     Attributes:
@@ -40,7 +39,6 @@ class Check(NodeMixin):
     validation_behavior: Callable
 
     def __init__(self, *args, **kwargs):
-        super().__init__()
         self.name = args[0]
         self.file = kwargs["file"]
         self.weight = kwargs["weight"]

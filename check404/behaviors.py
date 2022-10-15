@@ -1,12 +1,12 @@
-from .types import parse_function, parse_ctype, get_args
-from subprocess import PIPE
-from collections import namedtuple
-from enum import Enum
-from typing import Any
-import typing
-import subprocess
+from __future__ import annotations
 import os
 import ctypes
+import typing
+import subprocess
+from enum import Enum
+from collections import namedtuple
+from check404.types import (parse_function,
+                            parse_ctype, get_args)
 
 if typing.TYPE_CHECKING:
     from .check import Check
@@ -74,7 +74,7 @@ def function_run(check: 'Check') -> CheckResult:
     return check.validate(output=output)
 
 
-def function_validation(check: 'Check', output: Any) -> CheckResult:
+def function_validation(check: 'Check', output: typing.Any) -> CheckResult:
     """Validation behavior to compose Check class.
     Simple check to see if output matches exactly output from function
 
@@ -92,7 +92,7 @@ def function_validation(check: 'Check', output: Any) -> CheckResult:
         return CheckResult(CheckState.FAILED, msg)
 
 
-def variable_validation(check: 'Check', output: Any) -> CheckResult:
+def variable_validation(check: 'Check', output: typing.Any) -> CheckResult:
     """Validation behavior to compose Check class.
     Simple check to see if variable matches expectation after function run.
 
@@ -126,10 +126,11 @@ def iostream_run(check: 'Check') -> CheckResult:
         check.input = ""
 
     try:
-        process = subprocess.Popen([f"./bin/{executable_name}"],
-                                   stdin=PIPE,
-                                   stdout=PIPE,
-                                   encoding='utf-8')
+        process = subprocess.Popen(
+            [f"./bin/{executable_name}"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            encoding='utf-8')
     except OSError:
         msg = f"O arquivo './bin/{executable_name}' não foi encontrado. "
         return CheckResult(CheckState.ERROR, msg)
@@ -176,10 +177,17 @@ def compilation_run(check: 'Check') -> CheckResult:
     bin_path = f"./bin/{filename.replace('.c', '.out')}"
     dll_cmd = ['gcc', check.file, '-o', dll_path, '-fPIC', '-shared']
     bin_cmd = ['gcc', check.file, '-o', bin_path]
-    dll_result = subprocess.run(dll_cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                                encoding='utf-8')
-    bin_result = subprocess.run(bin_cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                                encoding='utf-8')
+    dll_result = subprocess.run(
+        dll_cmd, stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        encoding='utf-8')
+    bin_result = subprocess.run(
+        bin_cmd,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        encoding='utf-8')
     if not bin_result.returncode == 0:
         msg = (f"Erro ao compilar o arquivo {check.file} como executável. "
                f" {bin_result.stderr}")
